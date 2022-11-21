@@ -1,0 +1,26 @@
+#!/bin/bash
+#BSUB -J PT_spec_8chan
+#BSUB -P acc_mscic1
+#BSUB -q gpu
+#BSUB -n 1
+#BSUB -W 144:00
+#BSUB -R a100
+#BSUB -R affinity[core(10)]
+#BSUB -R rusage[mem=24000]
+#BSUB -R rusage[ngpus_excl_p=1]
+#BSUB -R span[hosts=1]
+#BSUB -oo /sc/arion/projects/mscic1/cad_ecg/cardio_phenotyping/lsf_outfiles/
+#BSUB -eo /sc/arion/projects/mscic1/cad_ecg/cardio_phenotyping/lsf_outfiles/
+#BSUB -L /bin/bash
+
+ml purge
+ml anaconda3/2021.5
+source /sc/arion/work/defrej02/a100_env_py38/bin/activate
+
+#python -m evaluate_pretrained_model --tb-prefix expr_OO --trained_model expr_OOcad2022-11-17_06.47.23expr_OO_waveform_t_plus_1_2906514.state --data-type waveform --dataset t_plus_1
+#python -m evaluate_pretrained_model --tb-prefix expr_OO --trained_model expr_OOcad2022-11-17_07.42.04expr_OO_waveform_t_minus_1_2680304.state --data-type waveform --dataset t_minus_1
+#python -m evaluate_pretrained_model --tb-prefix expr_OO --trained_model expr_OOcad2022-11-17_08.23.50expr_OO_waveform_t_minus_5_1636500.state --data-type waveform --dataset t_minus_5
+#python -m evaluate_pretrained_model --tb-prefix expr_OO --trained_model expr_OOcad2022-11-17_09.31.55expr_OO_waveform_t_minus_10_1082550.state --data-type waveform --dataset t_minus_10
+python -m evaluate_pretrained_model --tb-prefix expr_OO --trained_model expr_OOcad2022-11-17_06.47.23expr_OO_waveform_t_plus_1_2906514.state --data-type waveform --dataset t_minus_1
+#python -m evaluate_pretrained_model --tb-prefix expr_OO --trained_model expr_OOcad2022-11-17_06.47.23expr_OO_waveform_t_plus_1_2906514.state --data-type waveform --dataset t_minus_5
+#python -m evaluate_pretrained_model --tb-prefix expr_OO --trained_model expr_OOcad2022-11-17_06.47.23expr_OO_waveform_t_plus_1_2906514.state --data-type waveform --dataset t_minus_10

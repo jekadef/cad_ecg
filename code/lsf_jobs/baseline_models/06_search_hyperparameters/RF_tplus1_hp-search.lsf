@@ -1,0 +1,16 @@
+#!/bin/bash
+#BSUB -J RF_hp-search_tplus1
+#BSUB -P acc_mscic1
+#BSUB -q premium
+#BSUB -n 2
+#BSUB -W 144:00
+#BSUB -R affinity[core(10)]
+#BSUB -R rusage[mem=32000]
+#BSUB -R span[hosts=1]
+#BSUB -oo /sc/arion/projects/mscic1/cad_ecg/cardio_phenotyping/lsf_outfiles/
+#BSUB -eo /sc/arion/projects/mscic1/cad_ecg/cardio_phenotyping/lsf_outfiles/
+#BSUB -L /bin/bash
+ml purge
+ml anaconda3/2021.5
+source /sc/arion/work/defrej02/a100_env_py38/bin/activate
+python3 /sc/arion/projects/mscic1/cad_ecg/cardio_phenotyping/code/baseline_models/hyperparameter_search_20221102.py --dataset t_plus_1 --model random_forest --searchtype random

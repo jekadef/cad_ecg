@@ -1,0 +1,18 @@
+#!/bin/bash
+#BSUB -J spec2D_tminus5
+#BSUB -P acc_mscic1
+#BSUB -q gpu
+#BSUB -n 1
+#BSUB -W 144:00
+#BSUB -R a100
+#BSUB -R affinity[core(10)]
+#BSUB -R rusage[mem=24000]
+#BSUB -R rusage[ngpus_excl_p=1]
+#BSUB -R span[hosts=1]
+#BSUB -oo /sc/arion/projects/mscic1/cad_ecg/cardio_phenotyping/lsf_outfiles/
+#BSUB -eo /sc/arion/projects/mscic1/cad_ecg/cardio_phenotyping/lsf_outfiles/
+#BSUB -L /bin/bash
+ml purge
+ml anaconda3/2021.5
+source /sc/arion/work/defrej02/a100_env_py38/bin/activate
+python -m train --tb-prefix expr_RR --data-type spectrogram --dataset t_minus_5 --batch-size 32 --epochs 50 --lr-scheduler --early-stopping
