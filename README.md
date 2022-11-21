@@ -1,5 +1,5 @@
-# Phenotyping Coronary Artery Disease from Electrocardiograms
-#### This project aims to detect CAD from ECG data using deep learning. We hypothesize that a convolutional neural network architecture can detect ...
+# Real-world Challenges in Leveraging Electrocardiograms for Coronary Artery Disease Classification
+#### This project aims to detect CAD from ECG data using deep learning and investigate the challenges that comes with this task.
 
 Python version 3.8
 
@@ -7,63 +7,64 @@ Packages required: requirements.txt
 
 #Module descriptions
 
+## Cohort Selection
+- functions: utils.py, mapping.py, process.py
 
-### 1a. run_cardio_dx_query.sh & cardio_dx_query.sql
-- identify patients with CAD from MSDW
-- On HPIMS server
-- mysql db
+### 01 Data Extraction from Database
+- Execute: run_cardio_dx_query.sh 
+- SQL query: **cardio_dx_query.sql**
+- Goal is to identify patients with CAD from MSDW
+- Using mysql db HPIMS server
 - Resulting in file "cardio_dx_msdw_20200407.txt"
 - scp the file to MSCIC VM
 
+### 02 Identification of Cases 
+- Code: **get_cases_demographics_20221102.py**
+- Execute files in directory: 02_get_cases_demographics
+- Output:
 
-### 1b. get_mrn_filenames_ge_ecg.sql
-- get files names for all XMLs 
-- On MSCIC server
-- postgresql db
-- Resulting in file "ecg_mrn_filenames.csv"
-  
-### 2. get_cohort_filenames.py
-- join cardio_dx_msdw.txt with ecg_mrn_filenames.csv
-- subset with cardio disease of interest
-- Resulting in file "case_cad_YYYYMMDD.pkl.gz" & "control_cad_YYYYMMDD.pkl.gz"
+### 03 Identification of Controls
+- Code: **get_control_demographics_20221102.py**
+- Execute files in directory: 03_get_control_demographics
+- Output:
 
-### 3. get_filtered_cohort.py
-- get measurement data from all cases and equal number of controls
-- Resulting in file "case_control_cad_YYYYMMDD.pkl.gz"
+### 04 Create t-plus Dataset
+- Code: get_input_tplus_20221102.py
+- Execute files in directory: 04_get_tplus_input
+- Output:
 
-### 4a. get_measurement_dataset.py
-- get measurement data from cohort
+### 05 Create t-minus Datasets
+- Code: get_input_tminus_20221102.py
+- Execute files in directory: 05_get_tminus_input 
+- Output:
 
-### 4b. get_waveform_dataloader.py
-- for the CNN
+## Baseline Models
+- functions: utils.py, evaluate.py, preprocess.py, search.py, split.py, visualization.py, 
 
-### 5. main_hyperparameters.py
-- find best model parameters for baseline models
-- resulting in 
+### 06 Hyperparameter Search
+- Code: byperparameter_search_20221102.py
+- Execute: 06_search_hyperparameters
+- Output:
 
-### 6. main_performance.py
-- get performance of best baseline models
-- resulting in
+### 07 Train Baseline Models 
+- Code: baseline_training.py
+- Execute: 07_train_baselines
+- Output:
 
-#### utils.py
-- filenames
+### 08 Evaluate Baseline Models
+- Code: baseline_evaluate.py
+- Execute: 08_evaluate_baselines
+- Output:
 
-#### preprocess.py
-- functions for filtering, imputation, scaling data
+## Neural Network Models
+- functions: dataset.py, model.py, preprocess.py, utill.py
 
-#### split.py
-- create the train validation testing sets
+### 09 Train CNNs
+- Code: train.py
+- Execute: 09_train_cnn
+- Output:
 
-#### search.py
-- find best hyperparameters by grid search
-
-#### evaluate.py
-- train models with best hyperparameters and predict
-
-#### metrics.py
-- get performance 
-
-#### visualization.py
-- plots
-
-
+### 10 Evaluate CNNs
+- Code: evlauate_pretrained_model.py
+- Execute: 10_evaluate_cnn
+- Output:
