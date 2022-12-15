@@ -69,7 +69,7 @@ def get_sets(data_df):
         data_sets['Xval'] = x_temp.iloc[val_ix].to_numpy()
         data_sets['yval'] = y_temp.iloc[val_ix].to_numpy()
         # group_split['val'] = group_temp.iloc[val_ix]
-        demographics['val'] = demog.iloc[val_ix]
+        demographics['val'] = demog_temp.iloc[val_ix]
 
     return data_sets, group_split, demographics
 
