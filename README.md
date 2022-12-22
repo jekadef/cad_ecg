@@ -1,7 +1,7 @@
 # Real-world Challenges in Leveraging Electrocardiograms for Coronary Artery Disease Classification
 #### This project aims to detect CAD from ECG data using deep learning and investigate the challenges that comes with this task.
 
-link to the PDF on medarxiv
+This work was presented at the Time-series for Health workshop at NeurIPS 2022: https://openreview.net/pdf?id=9h-VdJCYmB1
 
 Python version 3.8
 
