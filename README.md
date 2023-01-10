@@ -44,7 +44,7 @@ Packages required: requirements.txt
 - functions: utils.py, evaluate.py, preprocess.py, search.py, split.py, visualization.py, 
 
 ### 06 Hyperparameter Search
-- Code: byperparameter_search_20221102.py
+- Code: hyperparameter_search_20221102.py
 - Execute: 06_search_hyperparameters
 - Output:
 

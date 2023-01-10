@@ -17,6 +17,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     after_set = args.afterdata
+    # after_set = 't_plus_1'
 
     data_dir = '/sc/arion/projects/mscic1/cad_ecg/cardio_phenotyping/data/cohort_selection/'
 
@@ -75,6 +76,13 @@ if __name__ == '__main__':
     input_dict = {}
     input_dict['data_dict'] = data_dict
     input_dict['demog_dict'] = demog_dict
+
+    # for k, v in df.items():
+    #     print(str(k))
+    #     print('case')
+    #     print(len(v[v.label == 1]))
+    #     print('control')
+    #     print(len(v[v.label == 0]))
 
     # dont save as seperate files
     fn = data_dir + 'cohort_' + after_set + '_input_dict_20221102.pkl.gz'
