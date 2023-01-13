@@ -28,7 +28,7 @@ def clean_ecg(fn):
     # fix formatting
     ecg_name['full_path'] = ecg_name.path + '/' + ecg_name.filename
     ecg_name.full_path = ecg_name.full_path.str.replace('/sharepoint/ecg/', '/sc/arion/projects/mscic1/data/GE_ECG_RSYNC/')
-
+    ecg_name = ecg_name[0:10000]
     return ecg_name
 
 def clean_msdw(fn):
