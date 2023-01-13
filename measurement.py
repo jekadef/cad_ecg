@@ -1,4 +1,5 @@
 import pandas as pd
+from sklearn.utils import resample
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import classification_report, roc_auc_score, average_precision_score
@@ -67,74 +68,70 @@ def get_sets(data_df):
 
     return data_sets, group_split, demographics
 
-def lr_search(search_type, df, grid):
+def hyperparam_search(df, model_type, search_type):
     """ Identifying best parameters"""
     x_data = df['Xtemp']
     y_data = df['ytemp']
     data_splits = df['predef_split']
-    results_dict = {} # lr = LogisticRegression(max_iter=500, solver='saga', random_state=8)
-    lr = LogisticRegression(max_iter=500, solver='saga', random_state=8)
-    scoring = {'f1': 'f1', 'loss': 'neg_log_loss'}
-    if search_type == 'random':
-        logreg_grid = RandomizedSearchCV(estimator=lr,
-                                         param_distributions=grid,
+
+    if model_type == 'logistic_regression':
+        results_dict = {} # lr = LogisticRegression(max_iter=500, solver='saga', random_state=8)
+        lr = LogisticRegression(max_iter=500, solver='saga', random_state=8)
+        scoring = {'f1': 'f1', 'loss': 'neg_log_loss'}
+        if search_type == 'random':
+            logreg_grid = RandomizedSearchCV(estimator=lr,
+                                             param_distributions=utils.lr_grid,
+                                             cv=data_splits,
+                                             scoring=scoring,
+                                             verbose=3,
+                                             refit='f1',
+                                             error_score=0,
+                                             return_train_score=True,
+                                             random_state=8)
+
+        if search_type == 'grid':
+            logreg_grid = GridSearchCV(estimator=lr,
+                                       param_grid=utils.lr_grid,
+                                       cv=data_splits,
+                                       scoring=scoring,
+                                       verbose=3,
+                                       refit='f1',
+                                       error_score=0,
+                                       return_train_score=True)
+        logreg_grid.fit(x_data, y_data)
+        results_dict = {#'best_estimator': logreg_grid.best_estimator_,
+                        'best_params': logreg_grid.best_params_,
+                        'performance_results': logreg_grid.cv_results_}
+
+    elif model_type == 'random_forest':
+        results_dict = {}
+        rf = RandomForestClassifier()
+
+        if search_type == 'random':
+            rf_grid = RandomizedSearchCV(estimator=rf,
+                                         param_distributions=rf_grid,
+                                         n_iter=30,
                                          cv=data_splits,
-                                         scoring=scoring,
+                                         scoring='f1',
                                          verbose=3,
-                                         refit='f1',
+                                         refit=False,
                                          error_score=0,
                                          return_train_score=True,
                                          random_state=8)
 
-    if search_type == 'grid':
-        logreg_grid = GridSearchCV(estimator=lr,
-                                   param_grid=grid,
+        if search_type == 'grid':
+            rf_grid = GridSearchCV(estimator=rf,
+                                   param_grid=rf_grid,
                                    cv=data_splits,
-                                   scoring=scoring,
+                                   scoring='f1',
                                    verbose=3,
-                                   refit='f1',
+                                   refit=False,
                                    error_score=0,
                                    return_train_score=True)
-    logreg_grid.fit(x_data, y_data)
-    results_dict = {#'best_estimator': logreg_grid.best_estimator_,
-                    'best_params': logreg_grid.best_params_,
-                    'performance_results': logreg_grid.cv_results_}
-    return results_dict
-
-def rf_search(search_type, df, grid):
-    """ Identifying best parameters"""
-    x_data = df['Xtemp']
-    y_data = df['ytemp']
-    data_splits = df['predef_split']
-    results_dict = {}
-    rf = RandomForestClassifier()
-
-    if search_type == 'random':
-        rf_grid = RandomizedSearchCV(estimator=rf,
-                                     param_distributions=grid,
-                                     n_iter=30,
-                                     cv=data_splits,
-                                     scoring='f1',
-                                     verbose=3,
-                                     refit=False,
-                                     error_score=0,
-                                     return_train_score=True,
-                                     random_state=8)
-
-    if search_type == 'grid':
-        rf_grid = GridSearchCV(estimator=rf,
-                               param_grid=grid,
-                               cv=data_splits,
-                               scoring='f1',
-                               verbose=3,
-                               refit=False,
-                               error_score=0,
-                               return_train_score=True)
-    rf_grid.fit(x_data, y_data)
-    results_dict = {#'best_estimator': rf_grid.best_estimator_,
-                    'best_params': rf_grid.best_params_,
-                    'performance_results': rf_grid.cv_results_}
-
+        rf_grid.fit(x_data, y_data)
+        results_dict = {  # 'best_estimator': rf_grid.best_estimator_,
+            'best_params': rf_grid.best_params_,
+            'performance_results': rf_grid.cv_results_}
     return results_dict
 
 def load_process_data(df, drop_vars):
@@ -236,44 +233,39 @@ def get_metrics(true, predicted):
     metrics_dict['f1-score'] = report['1']['f1-score']
     metrics_dict['AUC-ROC'] = roc_auc_score(true, predicted)
     metrics_dict['AUC-PR'] = average_precision_score(true, predicted)
-
     return metrics_dict
 
-def get_lr_model(df, search_results):
+def get_model(df, search_res):
     """ Trains a model and makes predictions """
     results = {}
-    best_params = search_results['best_params']
+    best_params = search_res['best_params']
     train_data = df['Xtrain']
     train_label = df['ytrain']
-    model = LogisticRegression(C=best_params['C'],
-                               penalty=best_params['penalty'],
-                               max_iter=500,
-                               solver='saga',
-                               random_state=8)
-    model.fit(train_data, train_label)
-    results['model'] = model
-    results['coefficient'] = model.coef_
-    results['beta'] = model.intercept_
-    return results
 
-def get_rf_model(df, search_results):
-    """ Trains a model and makes predictions """
-    results = {}
-    best_params = search_results['best_params']
-    train_data = df['Xtrain']
-    train_label = df['ytrain']
-    model = RandomForestClassifier(n_estimators=best_params['n_estimators'],
-                                   max_depth=best_params['max_depth'],
-                                   min_samples_leaf=best_params['min_samples_leaf'],
-                                   min_samples_split=best_params['min_samples_split'],
-                                   max_features=best_params['max_features'],
-                                   bootstrap=True,
+    if model_type == 'logistic_regression':
+        model = LogisticRegression(C=best_params['C'],
+                                   penalty=best_params['penalty'],
+                                   max_iter=500,
+                                   solver='saga',
                                    random_state=8)
-    model.fit(train_data, train_label)
-    results['model'] = model
-    results['feat_import'] = model.feature_importances_
+        model.fit(train_data, train_label)
+        results['model'] = model
+        results['coefficient'] = model.coef_
+        results['beta'] = model.intercept_
 
+    if model_type == 'random_forest':
+        model = RandomForestClassifier(n_estimators=best_params['n_estimators'],
+                                       max_depth=best_params['max_depth'],
+                                       min_samples_leaf=best_params['min_samples_leaf'],
+                                       min_samples_split=best_params['min_samples_split'],
+                                       max_features=best_params['max_features'],
+                                       bootstrap=True,
+                                       random_state=8)
+        model.fit(train_data, train_label)
+        results['model'] = model
+        results['feat_import'] = model.feature_importances_
     return results
+
 
 def plot_distributions(filename, data):
     for col in data.columns:

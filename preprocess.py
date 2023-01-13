@@ -1,4 +1,10 @@
+import sys
+import gzip
+import argparse
 import pandas as pd
+import pickle as pkl
+import numpy as np
+from datetime import date
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.impute import SimpleImputer, KNNImputer
 
@@ -13,20 +19,15 @@ def clean_ecg(fn):
     # remove missing for misformatted identifiers
     ecg_name = ecg_name[~(ecg_name.MEDICAL_RECORD_NUMBER.isna())]
     ecg_name = ecg_name[~(ecg_name.MEDICAL_RECORD_NUMBER.str.contains('BI|SLR'))]
-    # select ecgs collected between 1950 and 2022
-    ecg_name = ecg_name[(ecg_name.acquisitiondate < '2022-01-01') | (ecg_name.acquisitiondate > '1950-01-01')]
+    # select ecgs collected between 1971 and 2010
+    ecg_name = ecg_name[(ecg_name.acquisitiondate < '2010-01-01') | (ecg_name.acquisitiondate > '1971-01-01')]
     ecg_name = ecg_name.sort_values(by=['acquisitiondate'])
     ecg_name.acquisitiondate = pd.to_datetime(ecg_name.acquisitiondate)
-    # remove ecgs from patients less than 20 and greater than 90
-    ecg_name = ecg_name[(ecg_name['age'] >= 20) & (ecg_name['age'] <= 90)]
+    # remove ecgs from patients less than 20 and greater than 80
+    ecg_name = ecg_name[(ecg_name['age'] >= 20) & (ecg_name['age'] <= 80)]
     # fix formatting
     ecg_name['full_path'] = ecg_name.path + '/' + ecg_name.filename
     ecg_name.full_path = ecg_name.full_path.str.replace('/sharepoint/ecg/', '/sc/arion/projects/mscic1/data/GE_ECG_RSYNC/')
-    # add additional variables
-    ecg_name['time_delta'] = ecg_name.acquisitiondate - ecg_name.CALENDAR_DATE
-    ecg_name['years_icd_ecg'] = ecg_name.time_delta.dt.days / 365
-    age_bins = list(range(20, 101, 5))
-    ecg_name['age_binned'] = pd.cut(ecg_name['age'], age_bins)
 
     return ecg_name
 
@@ -37,9 +38,10 @@ def clean_msdw(fn):
     cardio_dx = pd.DataFrame()
     for chunk in pd.read_csv(fn, delimiter='\t', chunksize=size_of_chunk):
         chunk = chunk.astype({'MEDICAL_RECORD_NUMBER': str})
-        chunk = chunk.drop_duplicates()
-        cardio_dx = cardio_dx.append(chunk)
+        # chunk = chunk.drop_duplicates()
+        cardio_dx = pd.concat([cardio_dx,chunk])
 
+    cardio_dx = cardio_dx[(cardio_dx.CALENDAR_DATE < '2020-01-01') | (cardio_dx.CALENDAR_DATE > '1970-01-01')]  # restrict time
     # remove observations without birthdate or diagnosis date or identifier
     cardio_dx = cardio_dx[cardio_dx['DATE_OF_BIRTH'] != '0000-00-00 00:00:00']
     cardio_dx = cardio_dx[cardio_dx['CALENDAR_DATE'] != '0000-00-00 00:00:00']
@@ -57,13 +59,12 @@ def clean_msdw(fn):
     # format dates
     cardio_dx.DATE_OF_BIRTH = pd.to_datetime(cardio_dx.DATE_OF_BIRTH)
     cardio_dx.CALENDAR_DATE = pd.to_datetime(cardio_dx.CALENDAR_DATE)
-    # select ehr observatations between 1950 and 2020
 
     return cardio_dx
 
-def map_ethnicity(ehr_df, cohort_group):
+def map_ethnicity(ehr_df, cohort_group, fn):
     # load the map file
-    ethnicity_map = pd.read_csv(utils.ethnicity_fn)
+    ethnicity_map = pd.read_csv(fn)
 
     # get the values from the ehr dataframe
     ethnic_opt = ehr_df.PATIENT_ETHNIC_GROUP.drop_duplicates()
@@ -101,9 +102,9 @@ def map_ethnicity(ehr_df, cohort_group):
 
     return ethnicity_map
 
-def map_race(ehr_df, cohort_group):
+def map_race(ehr_df, cohort_group, fn):
     # load the map file
-    rac_map = pd.read_csv(utils.race_fn)
+    rac_map = pd.read_csv(fn)
 
     # get the values from the ehr dataframe
     race_opt = ehr_df.RACE.drop_duplicates()
@@ -136,10 +137,10 @@ def map_race(ehr_df, cohort_group):
 
     return rac_map
 
-def map_groups(ehr_df, group):
+def map_groups(ehr_df, group, eth_fn, race_fn):
 
-    ethn_map = map_ethnicity(ehr_df, group)
-    rac_map = map_race(ehr_df, group)
+    ethn_map = map_ethnicity(ehr_df, group, eth_fn)
+    rac_map = map_race(ehr_df, group, race_fn)
 
     ethnic_df = pd.merge(ehr_df, ethn_map, left_on='PATIENT_ETHNIC_GROUP', right_on='CODE', how='left')
     ethnic_df = ethnic_df.loc[:, ['MEDICAL_RECORD_NUMBER', 'GROUP_ETHNIC']]
